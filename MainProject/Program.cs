@@ -8,7 +8,6 @@ using BenchmarkDotNet.Reports;
 using BenchmarkDotNet.Running;
 
 using MainProject.Contracts.Entities;
-using MainProject.Contracts.Entities.ValueObjects;
 using MainProject.Contracts.Externals;
 using MainProject.Enums;
 using MainProject.Services;
@@ -22,7 +21,7 @@ namespace MainProject
         {
             private IEnumerable<ItemDto> _dataFromExternalService;
 
-            private ItemDto GetByIndex(int value)
+            private static ItemDto GetByIndex(int value)
             {
                 int index = value % 5;
 
@@ -44,13 +43,13 @@ namespace MainProject
             [GlobalSetup]
             public void GlobalSetup()
             {
-                var list = new List<ItemDto>();
-                foreach (int i in Enumerable.Range(1, 5000))
+                var n = 5000;
+                var arr = new ItemDto[n];
+                for (var i = 1; i <= n; i++)
                 {
-                    list.Add(GetByIndex(i));
+                    arr[i-1] = GetByIndex(i);
                 }
-
-                _dataFromExternalService = list;
+                _dataFromExternalService = arr;
             }
 
             [Benchmark]
@@ -58,15 +57,30 @@ namespace MainProject
             {
                 var converter = new ItemConverter();
 
-                Item[] items = converter.ConvertItems(_dataFromExternalService);
+                var dtoArr = _dataFromExternalService.ToArray();
+                Item[] items = converter.ConvertItems(dtoArr);
 
-                Dictionary<SizeType, List<Item>> itemsBySize = items
-                    .GroupBy(i => ItemSizeManager.GetSizeType(i.VolumeWeight))
-                    .ToDictionary(i => i.Key, i => i.ToList());
+                var itemsBySize = new Dictionary<SizeType, List<Item>>
+                {
+                    { SizeType.Max, new List<Item>() },
+                    { SizeType.Medium, new List<Item>() },
+                    { SizeType.Small, new List<Item>() }
+                };
+                for (var i = 0; i < items.Length; i++)
+                {
+                    var volumeWeight = items[i].VolumeWeight;
+                    var size = ItemSizeManager.GetSizeType(ref volumeWeight);
+                    itemsBySize[size].Add(items[i]);
+                }
 
                 ItemSaver.SaveBySize(itemsBySize);
 
-                List<Item> itemsForMainPage = items.Where(MainPageManager.IsForMainPage).ToList();
+                var itemsForMainPage = new List<Item>();
+                for (var i = 0; i < items.Length; i++)
+                {
+                    if (!MainPageManager.IsForMainPage(items[i])) continue;
+                    itemsForMainPage.Add(items[i]);
+                }
 
                 ItemSaver.SendItemsForMainPage(itemsForMainPage);
             }

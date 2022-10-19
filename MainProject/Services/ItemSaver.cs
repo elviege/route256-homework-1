@@ -11,7 +11,7 @@ namespace MainProject.Services
         {
         }
 
-        public static void SendItemsForMainPage(IEnumerable<Item> items)
+        public static void SendItemsForMainPage(List<Item> items)
         {
         }
     }

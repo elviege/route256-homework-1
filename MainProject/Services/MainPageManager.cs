@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 
 using MainProject.Contracts.Entities;
 using MainProject.Contracts.Entities.ValueObjects;
@@ -24,17 +23,13 @@ namespace MainProject.Services
 
         public static bool IsForMainPage(Item item)
         {
-            if (item.SaleInfo.Equals(TrashSaleInfo))
+            if (item.Sellers.Length == 0 || item.SaleInfo.Equals(TrashSaleInfo))
             {
                 return false;
             }
 
-            if (!item.Sellers.Any())
-            {
-                return false;
-            }
-
-            if (item.SaleInfo.Equals(BestSaleInfo) && CheckMinThreshold(item.Price))
+            var price = item.Price;
+            if (item.SaleInfo.Equals(BestSaleInfo) && CheckMinThreshold(ref price))
             {
                 return true;
             }
@@ -42,7 +37,7 @@ namespace MainProject.Services
             return false;
         }
 
-        private static bool CheckMinThreshold(Price price)
+        private static bool CheckMinThreshold(ref Price price)
         {
             return price.Currency switch
             {
