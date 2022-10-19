@@ -1,6 +1,6 @@
 namespace MainProject.Contracts.Entities.ValueObjects
 {
-    public sealed class VolumeWeightData
+    public struct VolumeWeightData
     {
         public long Weight { get; set; }
         public long Length { get; set; }
